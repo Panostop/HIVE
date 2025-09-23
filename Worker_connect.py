@@ -31,12 +31,14 @@ def FREEPing():
     
 
 
+
 # si on a pas de busy.json (PARTIE MATHIAS), on ping 
 threadFREEPing = threading.Thread(target=FREEPing, daemon=True) # création du thread
 threadFREEPing.start()
+HIVELib.targetListen(socketEcoute, 'ADPT') # on écoute en même temps
 
 # isAdopted = True -- on est adopté, le ping s'arrête
-isAdopted, addrReine = HIVELib.Listen(socketEcoute, "ADPT", addrReine)
+isAdopted, addrReine = HIVELib.targetListen(socketEcoute, "ADPT", addrReine)
 threadFREEPing.join() #on coupe le ping
 
 # on envoie un ack

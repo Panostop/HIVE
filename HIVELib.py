@@ -38,7 +38,7 @@ def generateurMDP(IDWorker:str) -> str:
     
     return password
 
-def Listen(socketEcoute:socket, target:str) -> bool:
+def targetListen(socketEcoute:socket, target:str) -> bool:
     """
     Ecoute les messages entrants jusqu'à recevoir le message souhaité de la Reine
     /!\ Bloquant 
