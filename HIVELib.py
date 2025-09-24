@@ -3,7 +3,6 @@ Librairie de fonctions communes aux Workers et à la Reine
 """
 import socket
 from time import time
-import hashlib, base64 # encodage du mot de passe
 import netifaces, struct #récupération du netmask
 
 def calcBroadcast(socketBroadcast) -> str:
@@ -27,25 +26,14 @@ def calcBroadcast(socketBroadcast) -> str:
 
     return broadcastAddr
 
-def generateurMDP(IDWorker:str) -> str:
-    # Génération de la clé ssh (10 caractères)
-    
-    graine = int(time.time()/2) #graine (change toutes les 2sec)
-    
-    #j'ai aucune idée de comment, mais ca fait ce que je veux
-    digest = hashlib.blake2s(f"{IDWorker}{graine}".encode()).digest()
-    password = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()[:10]
-    
-    return password
 
-def targetListen(socketEcoute:socket, target:str) -> bool:
+def Listen(socketEcoute:socket) -> bool:
     """
-    Ecoute les messages entrants jusqu'à recevoir le message souhaité de la Reine
+    Ecoute les messages entrants
     /!\ Bloquant 
     """
     
     message = None
-    while message != bytes(target, 'utf-8'):
-        message, addrSource = socketEcoute.recvfrom(1024) # buffer de 1024o lu non stop
+    message, addrSource = socketEcoute.recvfrom(1024) # buffer de 1024o bloquant en attente de réception
     
-    return True, addrSource
+    return message, addrSource
