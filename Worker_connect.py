@@ -64,4 +64,3 @@ generateurMDP()
 time.sleep(1) 
 socketEnvoi.sendto(b"BUSY", (broadcastAddr, 4173)) #update tout le réseau
 
-#test
