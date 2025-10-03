@@ -40,66 +40,6 @@ infos = {
 
 
 
-class Network:
-    
-    def get_local_ip():
-        try:
-            ip =
-
-            return ip   #renvoit l'IP locale ex: 192.168.0.1
-        except Exception:
-            return "Inconnue"
-        
-    def get_eth_info(searched):
-        interfaces = psutil.net_if_addrs()
-        for iface, addrs in interfaces.items():
-            for addr in addrs:
-                if addr.family.name == "AF_INET":  # IPv4
-                    if (searched in addr.address):
-                        return addr.address, addr.netmask
-                    
-        return None, None
-                                     
-    def get_wlan_info(searched):
-        interfaces = psutil.net_if_addrs()
-        for iface, addrs in interfaces.items():
-            for addr in addrs:
-                if addr.family.name == "AF_INET":  # IPv4
-                    if (searched in addr.address):
-                        return addr.address, addr.netmask
-                    
-        return None, None
-                    
-    def calculate_broadcast_adress(ip, masque):
-        cidr = f"{ip}/{masque}"
-        reseau = ipaddress.ip_network(cidr, strict=False)
-        #print(calculer_broadcast_ip_masque("192.168.1.42", "255.255.255.0"))
-        return str(reseau.broadcast_address)
-
-    def init_network():
-        global BROADCAST_ADDR, LOCAL_IP
-        if Network.check_internet():
-            LOCAL_IP = Network.get_local_ip()
-            if LOCAL_IP != "Inconnue":
-                ip, masque = Network.get_eth_info(LOCAL_IP)
-                if ip and masque:
-                    BROADCAST_ADDR = Network.calculate_broadcast_adress(ip, masque)
-                    return True
-                else:
-                    ip, masque = Network.get_wlan_info(LOCAL_IP)
-                    if ip and masque:
-                        BROADCAST_ADDR = Network.calculate_broadcast_adress(ip, masque)
-                        return True
-                    else:
-                        BROADCAST_ADDR = ""
-                        return False
-            else:
-                BROADCAST_ADDR = ""
-                return False
-        else:
-            LOCAL_IP = "Inconnue"
-            BROADCAST_ADDR = ""
-            return False
     
                 
 class busyfile:
@@ -143,6 +83,8 @@ class busyfile:
     def update_time():
         global json_data
         busyfile.modify("last_updated", time.strftime('%d/%m/%Y-%H:%M:%S'))
+
+
 
 
 class threads:
