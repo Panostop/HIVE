@@ -19,7 +19,7 @@ json_data = {}
 
 INTERVAL = 300                      # intervalle entre broadcasts en secondes (5 minutes = 300s)
 RECV_TIMEOUT = 0 if isAdopted else INTERVAL   # combien de secondes écouter de réponses après chaque broadcast
-MSG = "BUSY" if isAdopted else "FREE
+MSG = "BUSY" if isAdopted else "FREE"
 
 BROADCAST_ADDR = ""
 LOCAL_IP = ""
@@ -185,6 +185,16 @@ class threads:
                     inactivity_timer_stop_event.set()
                 time.sleep(0.2)
 
+        def ssh_viewer():
+            # utilise ausearch pour filtrer les commandes EXECVE
+            process = subprocess.Popen(
+            ["ausearch", "-m", "EXECVE", "--format", "raw"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True)
+            for line in process.stdout:
+                if "sshd" in line:
+                    print(line.strip())
 
 
         inactivity_timer_stop_event = threading.Event()
@@ -202,32 +212,54 @@ class threads:
             threads.inactivity_timer.thread_inactivity.join()
 
 
-    class ssh_viewer: #a faire
+    class listener: #a faire
         
-        def ssh_viewer():
-            # utilise ausearch pour filtrer les commandes EXECVE
-            process = subprocess.Popen(
-            ["ausearch", "-m", "EXECVE", "--format", "raw"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True)
-            for line in process.stdout:
-                if "sshd" in line:
-                    print(line.strip())
+        def listener(listener_stop_event):
+            global isAdopted
+            
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            s.bind(('', PORT))
+            s.setblocking(0)  # Mettre la socket en mode non bloquant
+
+            while not listener_stop_event.is_set():
+                ready = select.select([s], [], [], RECV_TIMEOUT)
+                if ready[0]:
+                    try:
+                        data, addr = s.recvfrom(1024)  # Buffer de 1024 octets
+                        message = data.decode('utf-8')
+                        
+                        if message.startswith("ADPT") and not isAdopted:
+
+                            QUEEN_IP = addr[0]
+                            busyfile.modify("queen_IP", QUEEN_IP)
+                            isAdopted = True
+                            s.sendto("OK".encode('utf-8'), (QUEEN_IP, PORT))
+                        
+                        elif message.startswith("STAT"):
+                            if isAdopted:
+                                s.sendto("BUSY".encode('utf-8'), (addr[0], PORT))
+                            else:
+                                s.sendto("FREE".encode('utf-8'), (addr[0], PORT))
+
+                    except Exception as e:
+                        print(f"Erreur lors de la réception: {e}")
+                else:
+                    if RECV_TIMEOUT > 0:
+                        listener_stop_event.set()  # Timeout écoulé, arrêter le listener
+            s.close()
 
 
-
-
-
-        ssh_viewer_stop_event = threading.Event()
-        thread_ssh_viewer = threading.Thread(target=ssh_viewer, args=(ssh_viewer_stop_event,))
+        listener_stop_event = threading.Event()
+        thread_listener = threading.Thread(target=listener, args=(listener_stop_event,))
 
         def start():
-            threads.ssh_viewer.thread_ssh_viewer.start()
+            threads.listener.thread_listener.start()
 
         def stop():
-            threads.ssh_viewer.ssh_viewer_stop_event.set()
-            threads.ssh_viewer.thread_ssh_viewer.join()
+            threads.listener.listener_stop_event.set()
+            threads.listener.thread_listener.join()
 
 
 
