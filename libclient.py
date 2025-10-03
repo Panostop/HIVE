@@ -3,31 +3,15 @@ import requests
 import urllib
 import psutil
 import ipaddress
-
+import time
 import json
 import os
-import socket
-import time
 from pathlib import Path
 from datetime import datetime
-
 import threading
-
-import time
-from datetime import datetime
-
-
-import socket
-import select
-import time
-
 import hashlib, base64 # encodage du mot de passe
-
-
-import socket
 import select
-import time
-from pathlib import Path
+import subprocess
 
 isAdopted = False  # changer à True si le worker est adopté
 
@@ -57,28 +41,12 @@ infos = {
 
 
 class Network:
-    def check_internet():
-        try:
-            urllib.request.urlopen('http://google.com', timeout=1)
-            return True
-        except:
-            return False
     
     def get_local_ip():
         try:
-            # se connecte à une IP publique (Google DNS), sans envoyer de paquets
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
-            s.close()
+            ip =
+
             return ip   #renvoit l'IP locale ex: 192.168.0.1
-        except Exception:
-            return "Inconnue"
-        
-    def get_public_ip():
-        try:
-            # requête à un service web pour obtenir l'IP publique
-            return requests.get("https://api.ipify.org").text
         except Exception:
             return "Inconnue"
         
@@ -237,7 +205,15 @@ class threads:
     class ssh_viewer: #a faire
         
         def ssh_viewer():
-            pass
+            # utilise ausearch pour filtrer les commandes EXECVE
+            process = subprocess.Popen(
+            ["ausearch", "-m", "EXECVE", "--format", "raw"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True)
+            for line in process.stdout:
+                if "sshd" in line:
+                    print(line.strip())
 
 
 
