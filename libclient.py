@@ -28,6 +28,12 @@ JSON_FILE = Path("busy.json")
 PORT = 4173
 QUEEN_IP = json_data["queen_IP"] if os.path.exists(JSON_FILE) else ""
 
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+s.bind(('', PORT))
+s.setblocking(0)
+
 
 # structure de base du json
 infos = {
@@ -39,8 +45,6 @@ infos = {
 }
 
 
-
-    
                 
 class busyfile:
     def init_data():
@@ -94,13 +98,7 @@ class threads:
         def inactivity_timer(inactivity_timer_stop_event, inactivity_timer_reset_event):
             global isAdopted, json_data
 
-            # Configurer la socket UDP
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # Autoriser l'envoi broadcast
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            # Lier sur toutes les interfaces pour recevoir les réponses
-            s.bind(('', PORT))
+            
 
             start = time.time()
             while not inactivity_timer_stop_event.is_set():
@@ -109,14 +107,6 @@ class threads:
                     inactivity_timer_reset_event.clear()   # on efface le signal pour repartir propre
         
                 elapsed = time.time() - start
-
-                if not (elapsed % 300):
-                    try:
-                        s.sendto(MSG.encode('utf-8'), (QUEEN_IP, PORT))
-                    except:
-                        print("Erreur lors du ping")
-                        os.remove(JSON_FILE)
-                        inactivity_timer_stop_event.set()
 
                 if elapsed >= (3 * 3600):  # 3 heures
                     global json_data
@@ -157,13 +147,7 @@ class threads:
     class listener: #a faire
         
         def listener(listener_stop_event):
-            global isAdopted
-            
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            s.bind(('', PORT))
-            s.setblocking(0)  # Mettre la socket en mode non bloquant
+            global isAdopted, s
 
             while not listener_stop_event.is_set():
                 ready = select.select([s], [], [], RECV_TIMEOUT)
@@ -225,14 +209,3 @@ class divers:
             #print("Problème avec la date")
             busyfile.update_time()
             divers.is_too_old()
-
-    def generateurMDP(IDWorker:str) -> str:
-    # Génération de la clé ssh (10 caractères)
-    
-        graine = int(time.time()/2) #graine (change toutes les 2sec)
-    
-    #j'ai aucune idée de comment, mais ca fait ce que je veux
-        digest = hashlib.blake2s(f"{IDWorker}{graine}".encode()).digest()
-        password = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()[:10]
-    
-        return password

@@ -3,6 +3,7 @@ import socket
 import select
 import time
 from pathlib import Path
+import libclient
 
 BROADCAST_ADDR = "255.255.255.255"   # ou mettre l'adresse broadcast de ton sous-réseau, ex. "192.168.1.255"
 PORT = 4173
@@ -20,8 +21,14 @@ def main():
     # Déterminer le statut initial
     if JSON_FILE.exists():
         isAdopted = True
+        libclient.divers.is_too_old()
+
     else:
         isAdopted = False
+
+
+
+
 
     # Configurer la socket UDP
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
