@@ -19,7 +19,6 @@ json_data = {}
 
 INTERVAL = 300                      # intervalle entre broadcasts en secondes (5 minutes = 300s)
 RECV_TIMEOUT = 0 if isAdopted else INTERVAL   # combien de secondes écouter de réponses après chaque broadcast
-MSG = "BUSY" if isAdopted else "FREE"
 
 BROADCAST_ADDR = ""
 LOCAL_IP = ""
@@ -27,6 +26,7 @@ LOCAL_IP = ""
 JSON_FILE = Path("busy.json")
 PORT = 4173
 QUEEN_IP = json_data["queen_IP"] if os.path.exists(JSON_FILE) else ""
+
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -203,8 +203,9 @@ class divers:
             diff = date2 - date1
             #print("En heures :", diff.total_seconds() / 3600)
             if (diff.total_seconds() / 3600) > old_threshold_hours:
-                os.remove(JSON_FILE)
-                json_data = {}
+                return True
+            else:
+                return False
         except:
             #print("Problème avec la date")
             busyfile.update_time()
