@@ -13,43 +13,36 @@ socketEnvoi = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 socketEcoute = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 socketEcoute.bind(('', 4173)) # prépa d'écoute sur toutes les adresses dispos sur le port HIVE
+socketEcoute.setblocking(False)# empêcher le blocage pendant l'écoute
+
 
 #déclaration des variables
 IDWorker = os.getlogin()  # ID du worker
 addrReine:str = None 
-isAdopted:bool = False
+HIVELib.isAdopted = False
 broadcastAddr:str = HIVELib.calcBroadcast(socketEnvoi) # calcul de l'adresse broadcast
 message:bytes = None
 commande:str = None
 
-def FREEPing():
-    global IDWorker, broadcastAddr
-    
-    # ----- Envoi du message ----- #
-    while True:
-        socketEnvoi.sendto((b"FREE:"+bytes(IDWorker)), (broadcastAddr, 4173))
-        time.sleep(30)
-    
 
 
 
-# si on a pas de busy.json (PARTIE MATHIAS), on ping 
-threadFREEPing = threading.Thread(target=FREEPing, daemon=True) # création du thread
-threadFREEPing.start()
 
 # isAdopted = True -- on est adopté, le ping s'arrête
-while commande != "ADPT":
-    message, addrReine = HIVELib.network.Listen(socketEcoute)
-    messagesplit = message.decode().split(":") # décode et découpe le message
-    commande = messagesplit[0] #récupère la partie commande du message
-    if commande != "ADPT":
-        clé = messagesplit[1] #récupère la clé
-        isAdopted = True
-        
+def AttenteAdoption():
+    global commande, message, addrReine, clé
+    while commande != "ADPT":
+        message, addrReine = HIVELib.network.Listen(socketEcoute)
+        messagesplit = message.decode().split(":") # décode et découpe le message
+        commande = messagesplit[0] #récupère la partie commande du message
+        if commande != "ADPT":
+            clé = messagesplit[1] #récupère la clé
+            HIVELib.isAdopted = True
+            
     
-    
-#on coupe le ping au bout d'une seconde pour bien s'assurer qu'il est dans la période d'attente
-threadFREEPing.join(1) 
+Threadlisten = threading.Thread(target=AttenteAdoption, args=(socketEcoute))
+Threadlisten.start()
+
 
 # on envoie un ack
 socketEnvoi.sendto(b"OK", (addrReine, 4173))
