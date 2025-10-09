@@ -5,6 +5,8 @@ import socket
 from time import time
 import netifaces, struct #récupération du netmask
 
+isadopted = False # variable globale pour savoir si le worker est adopté
+
 class network:
     def calcBroadcast(socketBroadcast) -> str:
         # ----- Calcul de l'adresse braoadcast ----- #
@@ -31,7 +33,7 @@ class network:
     def Listen(socketEcoute:socket) -> bool:
         """
         Ecoute les messages entrants
-        /!\ Bloquant 
+        
         """
         
         message = None
